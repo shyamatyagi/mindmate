@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% block title %}My Journal{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background: #101119;
+    color: #f0f0f0;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  h2, h3 {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #f0f0f0;
+  }
+
+  .journal-container {
+    position: relative;
+    max-width: 800px;
+    margin: 2rem auto;
+  }
+
+  .calendar-toggle {
+    position: absolute;
+    top: -3.5rem;
+    left: 0;
+    background: #333c3c;
+    color: #f6f2f2;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .calendar-toggle:hover {
+    background: #353737;
+  }
+
+  form {
+    background: #19191a;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  }
+
+  input[type="text"], textarea {
+    width: 100%;
+    background: #0b0b0b;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    padding: 12px 15px;
+    margin-top: 10px;
+    font-size: 1rem;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: #aaa;
+  }
+
+  .action-button {
+    padding: 10px 20px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #333c3c, #353737);
+    color: #f8f4f4;
+  }
+
+  .btn-save:hover {
+    background: linear-gradient(135deg, #444c4c, #4b4b4b);
+  }
+
+  #calendar {
+    background: #22243a;
+    border-radius: 16px;
+    padding: 1rem;
+    max-width: 900px;
+    margin: 2rem auto;
+    box-shadow: 0 0 30px rgba(0,0,0,0.3);
+  }
+
+  .entry-card {
+    background: #19191a;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 1rem auto;
+    max-width: 800px;
+    transition: transform 0.2s ease;
+    overflow: hidden;
+  }
+
+  .entry-card:hover {
+    transform: scale(1.01);
+  }
+
+  .entry-card h4 {
+    margin-bottom: 8px;
+    color: #3fe0d0;
+  }
+
+  .entry-card small {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.9rem;
+    color: #bbb;
+  }
+
+  .entry-card .entry-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .entry-btn {
+    background: #2f324a;
+    color: #f8f8f8;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.3s ease;
+  }
+
+  .entry-btn:hover {
+    background-color: #444868;
+  }
+
+  .delete-btn {
+    background-color: #ff5c5c;
+    color: #fff;
+  }
+
+  .delete-btn:hover {
+    background-color: #e04b4b;
+  }
+
+  .edit-btn {
+    background-color: #2d2f3f;
+  }
+
+  .edit-btn:hover {
+    background-color: #40425a;
+  }
+
+  .entry-actions form {
+    margin: 0;
+    padding: 0;
+    display: inline;
+  }
+
+  .entry-actions form button {
+    all: unset;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 500;
+    background-color: #ff5c5c;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .entry-actions form button:hover {
+    background-color: #e04b4b;
+  }
+
+.mic-button {
+  background-color: #2d2f3f;
+  color: #00ffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.mic-button:hover {
+  background-color: #40425a;
+}
+
+
+
+</style>
+
+<h2>Journal</h2>
+
+<!-- Form + Button Container -->
+<div class="journal-container">
+  <button class="calendar-toggle" onclick="toggleCalendar()">📅 Review Past Entries</button>
+
+  <!-- Journal Entry Form -->
+  <form method="POST">
+    {{ form.hidden_tag() }}
+    <div>
+      {{ form.title.label }}
+      {{ form.title(size=60, placeholder='Enter title') }}
+    </div>
+    <div style="margin-top: 10px;">
+  {{ form.content.label }}
+  {{ form.content(rows=5, cols=60, placeholder='Write your thoughts here...') }}
+</div>
+
+
+<div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
+  <button type="button" id="mic-btn" title="Start voice input" class="mic-button">🎤 Start Speaking</button>
+  {{ form.submit(class_='action-button btn-save', value='Save Entry') }}
+</div>
+
+
+
+  </form>
+</div>
+
+<!-- Hidden Calendar -->
+<div id="calendar-section" style="display: none;">
+  <div id="calendar"></div>
+</div>
+
+<hr style="margin: 2rem auto; max-width: 800px;">
+
+<!-- Display Recent Entries -->
+<h3>Recent Entries</h3>
+{% for entry in entries %}
+  <div class="entry-card">
+    <h4>{{ entry.title }}</h4>
+    <p>{{ entry.content }}</p>
+    <small>{{ entry.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+
+    <div class="entry-actions">
+      <a href="{{ url_for('edit_entry', entry_id=entry.id) }}" class="entry-btn edit-btn">Edit</a>
+      <form method="POST" action="{{ url_for('delete_entry', entry_id=entry.id) }}" style="display: inline;">
+        <button type="submit" class="entry-btn delete-btn"
+          onclick="return confirm('Are you sure you want to delete this entry?');">
+          Delete
+        </button>
+      </form>
+    </div>
+  </div>
+{% else %}
+  <p style="text-align:center;">No journal entries yet.</p>
+{% endfor %}
+
+<!-- FullCalendar Scripts -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<script>
+  let calendarInitialized = false;
+
+  function toggleCalendar() {
+    const section = document.getElementById("calendar-section");
+    if (section.style.display === "none") {
+      section.style.display = "block";
+      if (!calendarInitialized) {
+        const calendar = new FullCalendar.Calendar(document.getElementById("calendar"), {
+          initialView: 'dayGridMonth',
+          events: '/journal?format=json',
+          eventClick: function (info) {
+            window.location.href = `/edit_entry/${info.event.id}`;
+          },
+          headerToolbar: {
+            start: 'prev,next today',
+            center: 'title',
+            end: 'dayGridMonth'
+          },
+          height: 600
+        });
+        calendar.render();
+        calendarInitialized = true;
+      }
+    } else {
+      section.style.display = "none";
+    }
+  }
+
+  // 🎤 Speech-to-Text Functionality
+  const micBtn = document.getElementById('mic-btn');
+  const contentField = document.getElementById("{{ form.content.id }}");
+
+  if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    micBtn.addEventListener('click', () => {
+      recognition.start();
+      micBtn.innerText = "🛑";
+    });
+
+    recognition.onresult = (event) => {
+      const speechToText = event.results[0][0].transcript;
+      contentField.value += (contentField.value ? ' ' : '') + speechToText;
+    };
+
+    recognition.onerror = (event) => {
+      alert("Speech recognition error: " + event.error);
+    };
+
+    recognition.onend = () => {
+      micBtn.innerText = "🎤";
+    };
+  } else {
+    micBtn.disabled = true;
+    micBtn.title = "Speech recognition not supported in this browser";
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}MindMate Dashboard{% endblock %}
+
+{% block content %}
+<style>
+  .dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 30px;
+  }
+
+  .card {
+    background: linear-gradient(145deg, #2b2b3c, #1e1e2f);
+    border-radius: 20px;
+    padding: 24px;
+    color: #f5f5f5;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.25s ease;
+    min-height: 360px;
+    border: 1px solid #2d2d44;
+  }
+
+  .card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .card h3 {
+    font-size: 1.3rem;
+    color:#e6c875;
+    margin-bottom: 12px;
+  }
+
+  .card-description,
+  .chat-bubble,
+  .recent-entry-preview {
+    flex-grow: 1;
+    margin-bottom: 16px;
+    font-size: 0.95rem;
+    color: #dddddd;
+  }
+
+  .card-button {
+    background: #4facfe;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    align-self: flex-start;
+    transition: background 0.2s ease;
+  }
+
+  .card-button:hover {
+    background: #3b8eea;
+  }
+
+  .recent-entry-preview {
+    background: #313144;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 0.95rem;
+  }
+
+  .preview-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #ffffff;
+  }
+
+  .preview-snippet {
+    color: #cccccc;
+    margin-bottom: 8px;
+  }
+
+  .preview-date {
+    font-size: 0.8rem;
+    color: #999999;
+  }
+
+  .charts-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 40px;
+  }
+
+  .chart-card {
+    background: linear-gradient(145deg, #2b2b3c, #1e1e2f);
+    border-radius: 20px;
+    padding: 20px;
+    flex: 1;
+    min-width: 300px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  }
+
+  .chart-card h4 {
+    color: #7fd6d6;
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+  }
+  .tip-box {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
+  color: #ddd;
+  font-size: 0.95rem;
+}
+
+.tip-box strong {
+  color: #ffc107;
+  font-weight: 600;
+}
+
+.ai-tips {
+  list-style: none;
+  padding-left: 0;
+  margin: 0 0 20px 0;
+}
+
+.ai-tips li {
+  margin: 8px 0;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+</style>
+
+
+
+<div class="dashboard-wrapper">
+
+  
+
+ 
+  <!-- Dashboard Cards -->
+  <div class="dashboard-cards">
+
+    <!-- Journal -->
+    <div class="card journal-card">
+      <h3>📝 Recent Journal</h3>
+      <div class="recent-entry-preview">
+  {% if latest_entry %}
+    <h4 class="preview-title">{{ latest_entry.title }}</h4>
+    <p class="preview-snippet">{{ latest_entry.content[:150] }}...</p>
+    <span class="preview-date">{{ latest_entry.timestamp.strftime('%d %b %Y') }}</span>
+  {% else %}
+    <p>No journal entries yet.</p>
+  {% endif %}
+</div>
+
+      <a href="{{ url_for('journal') }}" class="card-button">Open Journal →</a>
+    </div>
+
+    <!-- Audio Sessions -->
+    <div class="card audio-card">
+      <h3>🎧 Audio Sessions</h3>
+      <p class="card-description">Relax with soothing soundscapes.</p>
+      <img src="/static/audio.jpg" style="width: 100%; border-radius: 10px; margin: 15px 0;" />
+      <a href="{{ url_for('audio') }}" class="card-button">Start Session →</a>
+    </div>
+
+    <!-- AI Assistant -->
+    <div class="card assistant-card">
+      <h3>🤖 MindMate Assistant</h3>
+      <p class="card-description">Here to guide you emotionally every day.</p>
+     <div class="tip-box">
+  <strong>Tip of the Day:</strong><br>
+  Try journaling before bed to improve sleep.
+</div>
+<ul class="ai-tips">
+  <li>🧘 Ask for a breathing exercise</li>
+  <li>🗣️ Talk about your feelings</li>
+  <li>📓 Summarize today’s journal</li>
+</ul>
+
+      <a href="{{ url_for('assistant') }}" class="card-button">Talk to AI →</a>
+    </div>
+
+  </div>
+
+  <!-- Charts Section -->
+  <div class="charts-container">
+    <div class="chart-card">
+      <h4 style="color: #fff;">📈 Mood Trends</h4>
+      <canvas id="moodChart" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <h4 style="color: #fff;">📊 Journal Frequency</h4>
+      <canvas id="journalChart" height="200"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  const moodData = {{ mood_data|tojson|safe }};
+  const freqData = {{ frequency_data|tojson|safe }};
+
+  // Mood Trends Chart
+  new Chart(document.getElementById("moodChart"), {
+    type: "line",
+    data: {
+      labels: moodData.labels,
+      datasets: [{
+        label: "Mood",
+        data: moodData.values,
+        borderColor: "#4facfe",
+        backgroundColor: "rgba(79, 172, 254, 0.2)",
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          min: -1,
+          max: 1,
+          ticks: {
+            callback: val => val > 0.4 ? "Positive 😊" : val < -0.4 ? "Negative 😢" : "Neutral 😐"
+          }
+        }
+      }
+    }
+  });
+
+  // Journal Frequency Bar Chart
+  new Chart(document.getElementById("journalChart"), {
+    type: "bar",
+    data: {
+      labels: freqData.labels,
+      datasets: [{
+        label: "Entries",
+        data: freqData.values,
+        backgroundColor: "#7C83FD",
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

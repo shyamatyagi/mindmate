@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Audio Sessions{% endblock %}
+{% block content %}
+
+<div class="audio-main">
+  <div class="audio-content">
+    <p class="audio-subtitle">
+      Select a mood to discover the perfect audio session for your current state of mind.
+    </p>
+
+    <div class="mood-grid">
+      {% for mood in moods %}
+      <div class="mood-card" onclick="toggleCard(this)" style="background-image: url('{{ mood.bg }}'); background-size: cover; background-position: center;">
+        <h3>{{ mood.name }}</h3>
+        <p>{{ mood.desc }}</p>
+
+        <div class="track-list" style="display: none;">
+          {% for track in mood.tracks %}
+          <button class="track-btn" onclick="event.stopPropagation(); selectTrack('{{ mood.name }}', '{{ track.name }}', '{{ track.src }}')">
+            ▶ {{ track.name }}
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="audio-sidebar">
+    <div class="sidebar-section">
+      <h3>Session Info</h3>
+      <div class="session-status">Select a mood to begin</div>
+    </div>
+
+    <div class="player-box">
+      <h3 id="trackTitle">No track selected</h3>
+      <p id="trackDesc">Choose a mood and track to start your session</p>
+
+      <!-- Hidden audio element -->
+      <audio id="audioPlayer" style="display: none;">
+        <source src="" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+
+      <!-- Play/Pause Toggle Button -->
+      <button id="togglePlayBtn" class="track-btn" disabled>
+        ▶ Play
+      </button>
+
+      <!-- Time Display -->
+      <div class="time-display">
+        <span id="currentTime">0:00</span>
+        <input type="range" id="progressBar" min="0" value="0" step="1">
+        <span id="totalTime">0:00</span>
+      </div>
+
+      <!-- Volume Control -->
+      <div class="volume-control">
+        <span>🔊</span>
+        <input type="range" id="volumeSlider" min="0" max="100" value="70">
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentAudio = document.getElementById('audioPlayer');
+const trackTitle = document.getElementById('trackTitle');
+const trackDesc = document.getElementById('trackDesc');
+const sessionStatus = document.querySelector('.session-status');
+const progressBar = document.getElementById('progressBar');
+const toggleBtn = document.getElementById('togglePlayBtn');
+
+let isPlaying = false;
+
+// Select a track
+function selectTrack(mood, track, src) {
+  trackTitle.innerText = `${mood} - ${track}`;
+  trackDesc.innerText = `Now playing: ${track}`;
+  sessionStatus.innerText = `${mood} session active`;
+
+  currentAudio.src = src;
+  currentAudio.play();
+  isPlaying = true;
+  toggleBtn.innerText = '⏸ Pause';
+  toggleBtn.disabled = false;
+
+  currentAudio.addEventListener('loadedmetadata', () => {
+    document.getElementById('totalTime').innerText = formatTime(currentAudio.duration);
+    progressBar.max = Math.floor(currentAudio.duration);
+  });
+}
+
+// Toggle mood cards
+function toggleCard(card) {
+  document.querySelectorAll('.track-list').forEach(list => {
+    if (list !== card.querySelector('.track-list')) {
+      list.style.display = 'none';
+    }
+  });
+
+  const trackList = card.querySelector('.track-list');
+  trackList.style.display = trackList.style.display === 'block' ? 'none' : 'block';
+}
+
+// Format time helper
+function formatTime(seconds) {
+  if (isNaN(seconds)) return '0:00';
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Play and pause functions
+function playTrack() {
+  currentAudio.play();
+  isPlaying = true;
+  toggleBtn.innerText = '⏸ Pause';
+}
+
+function pauseTrack() {
+  currentAudio.pause();
+  isPlaying = false;
+  toggleBtn.innerText = '▶ Play';
+}
+
+// Toggle button click
+toggleBtn.addEventListener('click', () => {
+  if (isPlaying) {
+    pauseTrack();
+  } else {
+    playTrack();
+  }
+});
+
+// Update progress bar
+currentAudio.addEventListener('timeupdate', () => {
+  document.getElementById('currentTime').innerText = formatTime(currentAudio.currentTime);
+  progressBar.value = Math.floor(currentAudio.currentTime);
+});
+
+progressBar.addEventListener('input', () => {
+  currentAudio.currentTime = progressBar.value;
+});
+
+// Volume control
+document.getElementById('volumeSlider').addEventListener('input', function () {
+  currentAudio.volume = this.value / 100;
+});
+
+currentAudio.volume = 0.7;
+
+// Spacebar toggle
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+    if (toggleBtn.disabled) return;
+    if (isPlaying) {
+      pauseTrack();
+    } else {
+      playTrack();
+    }
+  }
+});
+</script>
+{% endblock %}

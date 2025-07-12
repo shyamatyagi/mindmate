@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Register - MindMate{% endblock %}
+{% block content %}
+<div class="auth-container">
+  <form class="auth-form" method="POST">
+    <h2>Register</h2>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flash-messages">
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    {{ form.hidden_tag() }}
+
+    <label>{{ form.username.label }}</label>
+    {{ form.username(class="input-field") }}
+
+    <label>{{ form.password.label }}</label>
+    {{ form.password(class="input-field") }}
+
+    <label>{{ form.confirm_password.label }}</label>
+    {{ form.confirm_password(class="input-field") }}
+
+    {{ form.submit(class="submit-btn") }}
+
+    <p class="switch-link">
+      Already have an account?
+      <a href="{{ url_for('login') }}">Login</a>
+    </p>
+  </form>
+</div>
+{% endblock %}

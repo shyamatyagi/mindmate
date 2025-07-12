@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+{% block title %}MindMate Assistant{% endblock %}
+
+{% block content %}
+<style>
+  body {
+    background: linear-gradient(to right, #1e3c72, #2a5298);
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #fff;
+  }
+
+  .chat-title {
+    text-align: center;
+    font-size: 2rem;
+    margin: 20px 0;
+    font-weight: bold;
+  }
+
+  .chat-box {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 0 auto;
+    width: 90%;
+    max-width: 800px;
+    height: 400px;
+    overflow-y: auto;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .chat-message {
+    display: flex;
+    margin: 10px 0;
+    align-items: flex-start;
+  }
+
+  .chat-message.user {
+    justify-content: flex-end;
+  }
+
+  .chat-message.bot {
+    justify-content: flex-start;
+  }
+
+  .avatar {
+    font-size: 1.5rem;
+    margin-right: 10px;
+  }
+
+  .bubble {
+    background-color: #f1f1f1;
+    color: #000;
+    padding: 12px 15px;
+    border-radius: 15px;
+    max-width: 75%;
+    word-wrap: break-word;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  .chat-form {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .chat-form input {
+    flex-grow: 1;
+    max-width: 600px;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .chat-form button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+  }
+
+  .chat-form button:hover {
+    background-color: #45a049;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    background-color: #ccc;
+    border-radius: 24px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: 0.4s;
+  }
+
+  .slider::before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+
+  input:checked + .slider {
+    background-color: #2196F3;
+  }
+
+  input:checked + .slider::before {
+    transform: translateX(26px);
+  }
+
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .typing-indicator .dot {
+    width: 8px;
+    height: 8px;
+    background-color: #444;
+    border-radius: 50%;
+    animation: blink 1.4s infinite;
+  }
+
+  .typing-indicator .dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .typing-indicator .dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+    .reset-button {
+    display: block;
+    margin: 20px auto;
+    padding: 12px 20px;
+    background: #5f8c3d; /* red */
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .reset-button:hover {
+    background: #d32f2f;
+  }
+</style>
+
+<!-- Top Controls -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+  <div>
+    <label for="language" style="color: white;">🌍 Language:</label>
+    <select id="language">
+      <option value="en-US">English</option>
+      <option value="hi-IN">Hindi</option>
+      <option value="es-ES">Spanish</option>
+      <option value="fr-FR">French</option>
+      <option value="de-DE">German</option>
+      <option value="zh-CN">Chinese</option>
+      <option value="ar-SA">Arabic</option>
+      <option value="ta-IN">Tamil</option>
+      <option value="bn-IN">Bengali</option>
+    </select>
+  </div>
+  <div style="color: white;">
+    Voice 🔊
+    <label class="switch">
+      <input type="checkbox" id="interactiveToggle" checked>
+      <span class="slider round"></span>
+    </label>
+  </div>
+</div>
+
+<h2 class="chat-title">🤖 MindMate AI Assistant</h2>
+<div id="chat-box" class="chat-box"></div>
+
+<form id="chat-form" class="chat-form">
+  <input type="text" id="user-input" placeholder="Type or speak your message..." autocomplete="off" required />
+  <button type="submit">📨 Send</button>
+  <button type="button" id="mic-btn">🎤</button>
+</form>
+<p style="font-size: 0.9em; color: #ccc">🗣️ You can speak/type in your selected language.</p>
+<button onclick="resetConversation()" class="reset-button">🔁 Reset Chat</button>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const form = document.getElementById('chat-form');
+const input = document.getElementById('user-input');
+const chatBox = document.getElementById('chat-box');
+const micBtn = document.getElementById('mic-btn');
+
+let recognition;
+let isListening = false;
+
+if ('webkitSpeechRecognition' in window) {
+  recognition = new webkitSpeechRecognition();
+  recognition.interimResults = false;
+
+  micBtn.addEventListener('click', () => {
+    if (isListening) {
+      recognition.stop();
+      return;
+    }
+    recognition.lang = document.getElementById('language').value;
+    recognition.start();
+    isListening = true;
+    micBtn.innerText = '🔴 Listening...';
+    input.placeholder = "Listening... 🎙️";
+  });
+
+  recognition.onresult = (event) => {
+    input.value = event.results[0][0].transcript;
+    form.dispatchEvent(new Event('submit'));
+  };
+
+  recognition.onerror = (event) => {
+    micBtn.innerText = '🎤';
+    isListening = false;
+    input.placeholder = "Type or speak your message...";
+    alert("⚠️ Speech recognition error: " + event.error);
+  };
+
+  recognition.onend = () => {
+    micBtn.innerText = '🎤';
+    isListening = false;
+    input.placeholder = "Type or speak your message...";
+  };
+} else {
+  micBtn.disabled = true;
+  alert("❌ Your browser doesn't support speech recognition. Try Chrome.");
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const userText = input.value.trim();
+  if (!userText) return;
+  appendMessage('🧍 You', userText, 'user');
+  input.value = '';
+
+  const typing = document.createElement('div');
+  typing.classList.add('chat-message', 'bot', 'typing');
+  typing.innerHTML = `<div class="avatar"></div><div class="bubble typing-indicator">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`;
+  chatBox.appendChild(typing);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  const lang = document.getElementById('language').value;
+
+  try {
+    const res = await fetch('/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: userText, lang })
+    });
+    const data = await res.json();
+    typing.remove();
+    appendMessage('MindMate', data.answer, 'bot');
+    speakText(data.answer, lang);
+  } catch (err) {
+    typing.remove();
+    appendMessage('MindMate', '⚠️ Something went wrong.', 'bot');
+  }
+});
+
+function appendMessage(sender, message, type) {
+  const msg = document.createElement('div');
+  msg.classList.add('chat-message', type);
+  msg.innerHTML = `<div class="avatar"></div><div class="bubble"><strong>${sender}:</strong> ${message}</div>`;
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+const speakerMap = {
+  "en-US": "female-en-5",
+  "fr-FR": "female-en-5",
+  "pt-PT": "female-pt-4",
+  "hi-IN": "female-en-5",
+  "ta-IN": "female-en-5",
+  "bn-IN": "female-en-5",
+  "es-ES": "female-en-5",
+  "zh-CN": "female-en-5",
+  "ar-SA": "female-en-5",
+  "de-DE": "female-en-5"
+};
+
+function speakText(text, selectedLang) {
+  if (!document.getElementById('interactiveToggle').checked) return;
+  const speaker = speakerMap[selectedLang] || "female-en-5";
+  fetch('/speak', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, lang: selectedLang, speaker })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.audio_url) {
+      const audio = new Audio(data.audio_url);
+      audio.play();
+    } else {
+      console.error("Speech generation failed:", data);
+    }
+  })
+  .catch(err => {
+    console.error("Audio playback error", err);
+    appendMessage('MindMate', '⚠️ Sorry, audio could not be generated.', 'bot');
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const username = "{{ username }}";
+  const welcome = `👋 Hey ${username}! I'm MindMate. How are you feeling today?`;
+  const selectedLang = document.getElementById('language').value;
+  appendMessage("MindMate", welcome, "bot");
+  speakText(welcome, selectedLang);
+});
+function resetConversation() {
+    fetch("/reset_history", { method: "POST" })
+        .then(() => location.reload());
+}
+</script>
+{% endblock %}
